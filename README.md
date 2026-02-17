@@ -6,7 +6,7 @@ Minimal CLI for ESPN Fantasy Basketball analytics with deterministic JSON output
 
 ```bash
 uv venv
-uv sync --no-editable
+uv sync
 ```
 
 Create `~/.config/espn-fbb/config.toml`:
@@ -22,14 +22,14 @@ swid = "{SWID}"
 Run:
 
 ```bash
-espn-fbb recap
-espn-fbb matchup preview
-espn-fbb matchup outlook
+uv run espn-fbb recap
+uv run espn-fbb matchup preview
+uv run espn-fbb matchup outlook
 ```
 
 ## Development
 
-Install dev dependencies (non-editable by default):
+Install dev dependencies:
 
 ```bash
 uv sync --extra dev

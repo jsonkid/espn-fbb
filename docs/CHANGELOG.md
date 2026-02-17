@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## February 17, 2026
+
+- Migrated from `pip` to `uv`
+
+## February 16, 2026
 
 - Refactored matchup command surface:
   - `espn-fbb matchup preview`

@@ -2,7 +2,6 @@
 
 ## Near-Term
 
-- Add schema examples in `OUTPUT_SCHEMA.md` from real sanitized command outputs.
 - Tighten category projection precision policy (documented rounding guarantees).
 - Improve outlook confidence signals for sparse-stat cases.
 

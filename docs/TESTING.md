@@ -3,7 +3,8 @@
 ## Run Tests
 
 ```bash
-python3 -m pytest -q
+uv sync --extra dev --no-editable
+uv run pytest -q
 ```
 
 ## Test Layout
@@ -40,4 +41,3 @@ When changing fetch behavior:
 
 1. add tests for host/auth/error branching
 2. verify cache hit and no-cache paths
-

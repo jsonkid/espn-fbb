@@ -5,9 +5,8 @@ Minimal CLI for ESPN Fantasy Basketball analytics with deterministic JSON output
 ## Quick Start
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -e '.[dev]'
+uv venv
+uv sync --no-editable
 ```
 
 Create `~/.config/espn-fbb/config.toml`:
@@ -26,6 +25,14 @@ Run:
 espn-fbb recap
 espn-fbb matchup preview
 espn-fbb matchup outlook
+```
+
+## Development
+
+Install dev dependencies (non-editable by default):
+
+```bash
+uv sync --extra dev
 ```
 
 ## Documentation

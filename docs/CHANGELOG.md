@@ -3,6 +3,8 @@
 ## February 17, 2026
 
 - Migrated from `pip` to `uv`
+- Added team names to `recap`, `outlook`, and `preview` return objects
+- Added standing and record to `outlook` and `preview` return objects
 
 ## February 16, 2026
 

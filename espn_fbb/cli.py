@@ -98,7 +98,7 @@ def matchup_preview(
             cache=cache,
         )
 
-        views = ["mMatchupScore", "mScoreboard", "mTeam", "mRoster", "mSettings", "mMatchup"]
+        views = ["mMatchupScore", "mScoreboard", "mTeam", "mRoster", "mSettings", "mMatchup", "mStandings"]
         league = client.get_league(views=views, use_cache=not no_cache, cache_ttl_seconds=3 * 60 * 60)
         schedule = client.get_pro_team_schedules(use_cache=not no_cache, cache_ttl_seconds=24 * 60 * 60)
 
@@ -143,7 +143,7 @@ def matchup_outlook(
             cache=cache,
         )
 
-        views = ["mMatchupScore", "mScoreboard", "mTeam", "mRoster", "mSettings", "mMatchup"]
+        views = ["mMatchupScore", "mScoreboard", "mTeam", "mRoster", "mSettings", "mMatchup", "mStandings"]
         league = client.get_league(views=views, use_cache=not no_cache, cache_ttl_seconds=3 * 60 * 60)
         schedule = client.get_pro_team_schedules(use_cache=not no_cache, cache_ttl_seconds=24 * 60 * 60)
 

@@ -125,6 +125,14 @@ class DataQuality(BaseModel):
     opp_starters_missing_season_stats: int
 
 
+class TeamStanding(BaseModel):
+    rank: int | None = None
+    wins: int | None = None
+    losses: int | None = None
+    ties: int | None = None
+    percentage: float | None = None
+
+
 class PreviewResponse(BaseModel):
     schema_version: str
     command: str
@@ -134,6 +142,8 @@ class PreviewResponse(BaseModel):
     you_team_name: str | None = None
     opp_team_id: int | None = None
     opp_team_name: str | None = None
+    you_standing: TeamStanding | None = None
+    opp_standing: TeamStanding | None = None
     matchup_period_id: int
     projected_matchup_score: dict[str, int]
     categories: dict[str, CategoryProjection]
@@ -153,6 +163,8 @@ class OutlookResponse(BaseModel):
     you_team_name: str | None = None
     opp_team_id: int | None = None
     opp_team_name: str | None = None
+    you_standing: TeamStanding | None = None
+    opp_standing: TeamStanding | None = None
     matchup_period_id: int
     current_matchup_score: dict[str, int]
     projected_matchup_score: dict[str, int]

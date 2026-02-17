@@ -8,6 +8,7 @@ from espn_fbb.schema import (
     CategorySignal,
     CategoryStat,
     SummaryHints,
+    TeamStanding,
 )
 
 CATEGORY_ORDER = ["FG%", "FT%", "3PM", "REB", "AST", "STL", "BLK", "TO", "PTS"]
@@ -164,6 +165,43 @@ def _fantasy_team_name(team: dict[str, Any]) -> str | None:
         return abbrev.strip()
 
     return None
+
+
+def _team_standing(team: dict[str, Any]) -> TeamStanding | None:
+    if not team:
+        return None
+
+    rank = None
+    for key in ("rankCalculatedFinal", "overallRank", "playoffSeed", "seed"):
+        val = team.get(key)
+        if val is None:
+            continue
+        maybe = _to_int(val, 0)
+        if maybe > 0:
+            rank = maybe
+            break
+
+    record = team.get("record") or {}
+    overall = record.get("overall")
+    if isinstance(overall, list) and overall:
+        overall = overall[0]
+
+    wins = losses = ties = None
+    pct = None
+    if isinstance(overall, dict):
+        if "wins" in overall:
+            wins = _to_int(overall.get("wins"), 0)
+        if "losses" in overall:
+            losses = _to_int(overall.get("losses"), 0)
+        if "ties" in overall:
+            ties = _to_int(overall.get("ties"), 0)
+        if "percentage" in overall:
+            pct = _to_float(overall.get("percentage"), 0.0)
+
+    if rank is None and wins is None and losses is None and ties is None and pct is None:
+        return None
+
+    return TeamStanding(rank=rank, wins=wins, losses=losses, ties=ties, percentage=pct)
 
 
 def _player_stat_map(player: dict[str, Any], scoring_period_id: int | None = None) -> dict[int, float]:

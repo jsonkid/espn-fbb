@@ -49,6 +49,8 @@ def _league_payload() -> dict:
                 "id": 4,
                 "location": "Test",
                 "nickname": "Alpha",
+                "playoffSeed": 2,
+                "record": {"overall": {"wins": 12, "losses": 4, "ties": 0, "percentage": 0.75}},
                 "roster": {
                     "entries": [
                         {
@@ -113,6 +115,8 @@ def _league_payload() -> dict:
                 "id": 7,
                 "location": "Test",
                 "nickname": "Beta",
+                "playoffSeed": 6,
+                "record": {"overall": {"wins": 7, "losses": 9, "ties": 0, "percentage": 0.4375}},
                 "roster": {
                     "entries": [
                         {
@@ -191,6 +195,10 @@ def test_build_preview_signals_and_outlook():
     assert preview.games.games_diff > 0
     assert preview.schema_version == "2.0"
     assert preview.command == "matchup_preview"
+    assert preview.you_standing
+    assert preview.opp_standing
+    assert preview.you_standing.wins == 12
+    assert preview.opp_standing.wins == 7
     assert set(preview.projected_matchup_score.keys()) == {"you", "opp", "tie"}
     assert set(preview.categories.keys()) == {"FG%", "FT%", "3PM", "REB", "AST", "STL", "BLK", "TO", "PTS"}
     assert preview.outlook["label"] in {"Lean You", "Strong Lean You"}
@@ -223,6 +231,10 @@ def test_build_outlook_includes_current_and_projected_sections():
     assert set(outlook.projected_matchup_score.keys()) == {"you", "opp", "tie"}
     assert outlook.schema_version == "2.0"
     assert outlook.command == "matchup_outlook"
+    assert outlook.you_standing
+    assert outlook.opp_standing
+    assert outlook.you_standing.rank == 2
+    assert outlook.opp_standing.rank == 6
     assert set(outlook.categories.keys()) == {"FG%", "FT%", "3PM", "REB", "AST", "STL", "BLK", "TO", "PTS"}
     assert isinstance(outlook.games_remaining.games_remaining_diff, int)
     assert isinstance(outlook.summary_hints.swing_categories, list)

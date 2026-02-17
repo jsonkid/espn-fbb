@@ -26,6 +26,7 @@ Top-level fields:
 
 - `schema_version`, `command`
 - `generated_at`, `league_id`, `team_id`, `you_team_name`, `opp_team_id`, `opp_team_name`, `matchup_period_id`
+- `you_standing`, `opp_standing`
 - `projected_matchup_score` (`you`, `opp`, `tie`)
 - `categories` (map keyed by category code)
 - `games` (`you_total_games`, `opp_total_games`, `games_diff`)
@@ -56,6 +57,7 @@ Top-level fields:
 
 - `schema_version`, `command`
 - `generated_at`, `league_id`, `team_id`, `you_team_name`, `opp_team_id`, `opp_team_name`, `matchup_period_id`
+- `you_standing`, `opp_standing`
 - `current_matchup_score` (`you`, `opp`, `tie`)
 - `projected_matchup_score` (`you`, `opp`, `tie`)
 - `categories` (map keyed by category code with paired `current_*` and `projected_*`)
@@ -70,6 +72,12 @@ Category entry (`categories.{CAT}`):
 - `projected_you`, `projected_opp`, `projected_margin`, `projected_status`, `projected_pdiff`, `projected_signal`
 
 ## Shared Objects
+
+`TeamStanding`:
+
+- `rank`
+- `wins`, `losses`, `ties`
+- `percentage`
 
 `summary_hints`:
 
@@ -107,6 +115,8 @@ Source: sanitized real output (`preview.json`).
   "you_team_name": "Example You",
   "opp_team_id": 2,
   "opp_team_name": "Example Opp",
+  "you_standing": { "rank": 2, "wins": 12, "losses": 4, "ties": 0, "percentage": 0.75 },
+  "opp_standing": { "rank": 6, "wins": 7, "losses": 9, "ties": 0, "percentage": 0.4375 },
   "matchup_period_id": 18,
   "projected_matchup_score": {
     "you": 5,
@@ -248,6 +258,8 @@ Source: sanitized real output (`outlook.json`).
   "you_team_name": "Example You",
   "opp_team_id": 2,
   "opp_team_name": "Example Opp",
+  "you_standing": { "rank": 2, "wins": 12, "losses": 4, "ties": 0, "percentage": 0.75 },
+  "opp_standing": { "rank": 6, "wins": 7, "losses": 9, "ties": 0, "percentage": 0.4375 },
   "matchup_period_id": 17,
   "current_matchup_score": {
     "you": 4,

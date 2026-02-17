@@ -24,14 +24,12 @@ def _exit(code: int, message: str) -> None:
 
 @app.command()
 def recap(
-    json_output: bool = typer.Option(True, "--json", help="Compatibility flag; JSON is always output."),
     league_id: str | None = typer.Option(None, "--league-id"),
     team_id: int | None = typer.Option(None, "--team-id"),
     season: int | None = typer.Option(None, "--season"),
     no_cache: bool = typer.Option(False, "--no-cache"),
     config_path: Path | None = typer.Option(None, "--config-path", hidden=True),
 ) -> None:
-    del json_output  # output is always JSON
     cache = JsonCache()
 
     try:
@@ -82,15 +80,12 @@ def recap(
 
 @matchup_app.command("preview")
 def matchup_preview(
-    json_output: bool = typer.Option(True, "--json", help="Compatibility flag; JSON is always output."),
     league_id: str | None = typer.Option(None, "--league-id"),
     team_id: int | None = typer.Option(None, "--team-id"),
     season: int | None = typer.Option(None, "--season"),
     no_cache: bool = typer.Option(False, "--no-cache"),
     config_path: Path | None = typer.Option(None, "--config-path", hidden=True),
 ) -> None:
-    del json_output
-
     cache = JsonCache()
 
     try:
@@ -130,15 +125,12 @@ def matchup_preview(
 
 @matchup_app.command("outlook")
 def matchup_outlook(
-    json_output: bool = typer.Option(True, "--json", help="Compatibility flag; JSON is always output."),
     league_id: str | None = typer.Option(None, "--league-id"),
     team_id: int | None = typer.Option(None, "--team-id"),
     season: int | None = typer.Option(None, "--season"),
     no_cache: bool = typer.Option(False, "--no-cache"),
     config_path: Path | None = typer.Option(None, "--config-path", hidden=True),
 ) -> None:
-    del json_output
-
     cache = JsonCache()
 
     try:

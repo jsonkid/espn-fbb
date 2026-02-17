@@ -23,7 +23,6 @@ Global overrides:
 - `--team-id`
 - `--season`
 - `--no-cache`
-- `--json` (compatibility flag; output is always JSON)
 
 ## `espn-fbb recap`
 
@@ -71,4 +70,3 @@ espn-fbb matchup outlook --no-cache
 - `3`: authentication error
 - `4`: ESPN/network/request-budget error
 - `5`: unexpected runtime error
-

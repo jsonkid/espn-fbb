@@ -16,7 +16,6 @@ Create `~/.config/espn-fbb/config.toml`:
 league_id = "123456"
 team_id = "4"
 season = 2026
-
 espn_s2 = "COOKIE"
 swid = "{SWID}"
 ```

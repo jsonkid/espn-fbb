@@ -148,6 +148,24 @@ def _team_map(league: dict[str, Any]) -> dict[int, dict[str, Any]]:
     return out
 
 
+def _fantasy_team_name(team: dict[str, Any]) -> str | None:
+    # ESPN commonly exposes fantasy team names as location/nickname pairs.
+    name = team.get("name")
+    if isinstance(name, str) and name.strip():
+        return name.strip()
+
+    location = team.get("location")
+    nickname = team.get("nickname")
+    if isinstance(location, str) and isinstance(nickname, str) and (location.strip() or nickname.strip()):
+        return (location.strip() + " " + nickname.strip()).strip()
+
+    abbrev = team.get("abbrev")
+    if isinstance(abbrev, str) and abbrev.strip():
+        return abbrev.strip()
+
+    return None
+
+
 def _player_stat_map(player: dict[str, Any], scoring_period_id: int | None = None) -> dict[int, float]:
     stats = player.get("stats", [])
     preferred: dict[str, Any] | None = None

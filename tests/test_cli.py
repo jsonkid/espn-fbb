@@ -31,8 +31,8 @@ LEAGUE_PAYLOAD = {
         }
     ],
     "teams": [
-        {"id": 4, "roster": {"entries": []}},
-        {"id": 7, "roster": {"entries": []}},
+        {"id": 4, "location": "Test", "nickname": "Alpha", "roster": {"entries": []}},
+        {"id": 7, "location": "Test", "nickname": "Beta", "roster": {"entries": []}},
     ],
 }
 
@@ -65,6 +65,8 @@ def test_recap_outputs_json(monkeypatch, tmp_path: Path):
     assert result.exit_code == 0
     payload = json.loads(result.stdout)
     assert payload["league_id"] == "123"
+    assert payload["you_team_name"]
+    assert payload["opp_team_name"]
     assert "categories" in payload
 
 
@@ -87,6 +89,7 @@ def test_matchup_preview_outputs_json(monkeypatch, tmp_path: Path):
     payload = json.loads(result.stdout)
     assert payload["league_id"] == "123"
     assert payload["schema_version"] == "2.0"
+    assert payload["you_team_name"]
     assert "outlook" in payload
 
 
@@ -109,4 +112,5 @@ def test_matchup_outlook_outputs_json(monkeypatch, tmp_path: Path):
     payload = json.loads(result.stdout)
     assert payload["league_id"] == "123"
     assert payload["schema_version"] == "2.0"
+    assert payload["you_team_name"]
     assert "games_remaining" in payload

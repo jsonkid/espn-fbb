@@ -47,6 +47,8 @@ def _league_payload() -> dict:
         "teams": [
             {
                 "id": 4,
+                "location": "Test",
+                "nickname": "Alpha",
                 "roster": {
                     "entries": [
                         {
@@ -109,6 +111,8 @@ def _league_payload() -> dict:
             },
             {
                 "id": 7,
+                "location": "Test",
+                "nickname": "Beta",
                 "roster": {
                     "entries": [
                         {

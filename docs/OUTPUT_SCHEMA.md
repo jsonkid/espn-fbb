@@ -8,7 +8,7 @@ All commands return JSON only.
 
 Top-level fields:
 
-- `generated_at`, `league_id`, `team_id`, `matchup_period_id`
+- `generated_at`, `league_id`, `team_id`, `you_team_name`, `opp_team_id`, `opp_team_name`, `matchup_period_id`
 - `matchup_score` (`you`, `opp`)
 - `categories` (array of 9 category rows)
 - `movers` (up to 5)
@@ -25,7 +25,7 @@ Category row (`categories[]`):
 Top-level fields:
 
 - `schema_version`, `command`
-- `generated_at`, `league_id`, `team_id`, `matchup_period_id`
+- `generated_at`, `league_id`, `team_id`, `you_team_name`, `opp_team_id`, `opp_team_name`, `matchup_period_id`
 - `projected_matchup_score` (`you`, `opp`, `tie`)
 - `categories` (map keyed by category code)
 - `games` (`you_total_games`, `opp_total_games`, `games_diff`)
@@ -55,7 +55,7 @@ Lineup action entry:
 Top-level fields:
 
 - `schema_version`, `command`
-- `generated_at`, `league_id`, `team_id`, `matchup_period_id`
+- `generated_at`, `league_id`, `team_id`, `you_team_name`, `opp_team_id`, `opp_team_name`, `matchup_period_id`
 - `current_matchup_score` (`you`, `opp`, `tie`)
 - `projected_matchup_score` (`you`, `opp`, `tie`)
 - `categories` (map keyed by category code with paired `current_*` and `projected_*`)
@@ -104,6 +104,9 @@ Source: sanitized real output (`preview.json`).
   "generated_at": "2026-02-16T13:29:21-05:00",
   "league_id": "233477",
   "team_id": 1,
+  "you_team_name": "Example You",
+  "opp_team_id": 2,
+  "opp_team_name": "Example Opp",
   "matchup_period_id": 18,
   "projected_matchup_score": {
     "you": 5,
@@ -242,6 +245,9 @@ Source: sanitized real output (`outlook.json`).
   "generated_at": "2026-02-16T13:27:25-05:00",
   "league_id": "233477",
   "team_id": 1,
+  "you_team_name": "Example You",
+  "opp_team_id": 2,
+  "opp_team_name": "Example Opp",
   "matchup_period_id": 17,
   "current_matchup_score": {
     "you": 4,
@@ -438,6 +444,9 @@ Source: sanitized real output (`recap.json`).
   "generated_at": "2026-02-16T09:05:10-05:00",
   "league_id": "233477",
   "team_id": 1,
+  "you_team_name": "Example You",
+  "opp_team_id": 2,
+  "opp_team_name": "Example Opp",
   "matchup_period_id": 17,
   "matchup_score": {
     "you": 4,

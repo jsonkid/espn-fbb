@@ -50,6 +50,9 @@ class RecapResponse(BaseModel):
     generated_at: str
     league_id: str
     team_id: int
+    you_team_name: str | None = None
+    opp_team_id: int | None = None
+    opp_team_name: str | None = None
     matchup_period_id: int
     matchup_score: dict[str, int]
     categories: list[CategoryStat]
@@ -128,6 +131,9 @@ class PreviewResponse(BaseModel):
     generated_at: str
     league_id: str
     team_id: int
+    you_team_name: str | None = None
+    opp_team_id: int | None = None
+    opp_team_name: str | None = None
     matchup_period_id: int
     projected_matchup_score: dict[str, int]
     categories: dict[str, CategoryProjection]
@@ -144,6 +150,9 @@ class OutlookResponse(BaseModel):
     generated_at: str
     league_id: str
     team_id: int
+    you_team_name: str | None = None
+    opp_team_id: int | None = None
+    opp_team_name: str | None = None
     matchup_period_id: int
     current_matchup_score: dict[str, int]
     projected_matchup_score: dict[str, int]

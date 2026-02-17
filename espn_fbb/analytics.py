@@ -12,6 +12,7 @@ from espn_fbb.analytics_base import (
     _current_category_totals_from_side,
     _current_matchup_period_id,
     _double_triple_counts,
+    _fantasy_team_name,
     _fg_pct,
     _find_matchup_for_period,
     _ft_pct,
@@ -280,6 +281,9 @@ def build_recap(
         generated_at=iso_ts(),
         league_id=league_id,
         team_id=team_id,
+        you_team_name=_fantasy_team_name(you_team),
+        opp_team_id=opp_team_id if opp_team_id > 0 else None,
+        opp_team_name=_fantasy_team_name(opp_team),
         matchup_period_id=matchup_period_id,
         matchup_score=_matchup_score(categories),
         categories=categories,
@@ -315,7 +319,8 @@ def build_preview(
 
     teams = _team_map(league_payload)
     you_team = teams.get(team_id, {})
-    opp_team = teams.get(_to_int(opp_side.get("teamId", -1), -1), {})
+    opp_team_id = _to_int(opp_side.get("teamId", -1), -1)
+    opp_team = teams.get(opp_team_id, {})
 
     games_map = _games_by_pro_team(schedule_payload, matchup_period_id, scoring_period_ids=scoring_period_ids)
     starter_slot_counts = _starter_slot_counts(league_payload)
@@ -353,6 +358,9 @@ def build_preview(
         generated_at=iso_ts(),
         league_id=league_id,
         team_id=team_id,
+        you_team_name=_fantasy_team_name(you_team),
+        opp_team_id=opp_team_id if opp_team_id > 0 else None,
+        opp_team_name=_fantasy_team_name(opp_team),
         matchup_period_id=matchup_period_id,
         projected_matchup_score=_matchup_score_with_ties(categories),
         categories=_category_projection_map(categories),
@@ -394,7 +402,8 @@ def build_outlook(
 
     teams = _team_map(league_payload)
     you_team = teams.get(team_id, {})
-    opp_team = teams.get(_to_int(opp_side.get("teamId", -1), -1), {})
+    opp_team_id = _to_int(opp_side.get("teamId", -1), -1)
+    opp_team = teams.get(opp_team_id, {})
     starter_slot_counts = _starter_slot_counts(league_payload)
 
     current_scoring_period = (league_payload.get("status") or {}).get("currentScoringPeriod")
@@ -445,6 +454,9 @@ def build_outlook(
         generated_at=iso_ts(),
         league_id=league_id,
         team_id=team_id,
+        you_team_name=_fantasy_team_name(you_team),
+        opp_team_id=opp_team_id if opp_team_id > 0 else None,
+        opp_team_name=_fantasy_team_name(opp_team),
         matchup_period_id=matchup_period_id,
         current_matchup_score=_matchup_score_with_ties(current_categories),
         projected_matchup_score=_matchup_score_with_ties(projected_categories),

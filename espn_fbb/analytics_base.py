@@ -41,6 +41,26 @@ MOVER_THRESHOLDS = {
     "FT%": 0.010,
 }
 
+AVAILABILITY_STATUS_MAP = {
+    "O": "out",
+    "OUT": "out",
+    "DTD": "day_to_day",
+    "DAY_TO_DAY": "day_to_day",
+    "D2D": "day_to_day",
+    "SSPD": "suspended",
+    "SUSPENDED": "suspended",
+    "Q": "questionable",
+    "QUESTIONABLE": "questionable",
+    "D": "doubtful",
+    "DOUBTFUL": "doubtful",
+    "PROBABLE": "probable",
+    "P": "probable",
+    "IR": "injured_reserve",
+    "INJURY_RESERVE": "injured_reserve",
+    "COVID": "illness",
+    "COVID_19": "illness",
+}
+
 
 def _to_float(value: Any, default: float = 0.0) -> float:
     try:
@@ -54,6 +74,21 @@ def _to_int(value: Any, default: int = 0) -> int:
         return int(value)
     except (TypeError, ValueError):
         return default
+
+
+def _normalize_injury_status(raw: Any) -> tuple[str, str | None]:
+    if raw is None:
+        return "active", None
+    raw_text = str(raw).strip()
+    if not raw_text:
+        return "active", None
+    upper = raw_text.upper()
+    if upper in {"ACTIVE", "HEALTHY", "NORMAL"}:
+        return "active", upper
+    mapped = AVAILABILITY_STATUS_MAP.get(upper)
+    if mapped:
+        return mapped, upper
+    return "unknown", upper
 
 
 def _status_for_category(cat: str, you: float, opp: float) -> str:

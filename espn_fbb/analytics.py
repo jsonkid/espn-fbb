@@ -11,16 +11,14 @@ from espn_fbb.analytics_base import (
     _compute_categories,
     _current_category_totals_from_side,
     _current_matchup_period_id,
-    _double_triple_counts,
     _fantasy_team_name,
-    _fg_pct,
     _find_matchup_for_period,
-    _ft_pct,
     _has_stats_for_period,
     _leader_sign,
     _lineup_role,
     _matchup_score,
     _matchup_score_with_ties,
+    _normalize_injury_status,
     _player_stat_map,
     _roster_entries,
     _signal_lists,
@@ -30,7 +28,9 @@ from espn_fbb.analytics_base import (
     _to_float,
     _to_int,
     FGA_STAT_ID,
+    FGM_STAT_ID,
     FTA_STAT_ID,
+    FTM_STAT_ID,
     STAT_ID_MAP,
 )
 from espn_fbb.analytics_projection import (
@@ -40,12 +40,11 @@ from espn_fbb.analytics_projection import (
     _lineup_swap_actions,
     _outlook,
     _projected_category_totals_from_starters,
+    _season_averages_stat_map,
     _team_projected_games,
 )
 from espn_fbb.analytics_schedule import _games_by_pro_team, _resolve_matchup_window, _starter_slot_counts
 from espn_fbb.schema import (
-    CandidateGroup,
-    CandidateMeta,
     CategoryStat,
     DataQuality,
     GamesBreakdown,
@@ -53,134 +52,19 @@ from espn_fbb.schema import (
     LineupAction,
     Mover,
     OutlookResponse,
-    PlayerCandidate,
+    PeriodStats,
     PreviewResponse,
     RecapResponse,
+    OutlookRosterEntry,
+    OutlookRosterGroup,
+    PreviewRosterEntry,
+    PreviewRosterGroup,
+    RecapRosterEntry,
+    RecapRosterGroup,
+    RosterMeta,
+    SeasonAverages,
 )
 from espn_fbb.utils import iso_ts
-
-
-def _compute_good_candidate(
-    entry: dict[str, Any], scoring_period_id: int | None = None, lineup_slot_id: int = 999
-) -> PlayerCandidate | None:
-    player = (entry.get("playerPoolEntry") or {}).get("player") or {}
-    stat_map = _player_stat_map(player, scoring_period_id=scoring_period_id)
-    if not stat_map:
-        return None
-
-    pts = stat_map.get(STAT_ID_MAP["PTS"], 0.0)
-    threes = stat_map.get(STAT_ID_MAP["3PM"], 0.0)
-    reb = stat_map.get(STAT_ID_MAP["REB"], 0.0)
-    ast = stat_map.get(STAT_ID_MAP["AST"], 0.0)
-    stl = stat_map.get(STAT_ID_MAP["STL"], 0.0)
-    blk = stat_map.get(STAT_ID_MAP["BLK"], 0.0)
-    is_dd, is_td = _double_triple_counts(stat_map)
-
-    reasons: list[str] = []
-    impact = 0.0
-
-    if pts >= 20:
-        reasons.append("PTS>=20")
-        impact += max(0.0, pts - 19) * 0.5
-    if threes >= 4:
-        reasons.append("3PM>=4")
-        impact += max(0.0, threes - 3) * 1.0
-    if reb >= 10:
-        reasons.append("REB>=10")
-        impact += max(0.0, reb - 9) * 0.7
-    if ast >= 8:
-        reasons.append("AST>=8")
-        impact += max(0.0, ast - 7) * 0.9
-    if stl >= 3:
-        reasons.append("STL>=3")
-        impact += max(0.0, stl - 2) * 1.5
-    if blk >= 3:
-        reasons.append("BLK>=3")
-        impact += max(0.0, blk - 2) * 1.5
-    if is_dd:
-        reasons.append("double-double")
-        impact += 2.0
-    if is_td:
-        reasons.append("triple-double")
-        impact += 4.0
-
-    if not reasons:
-        return None
-
-    return PlayerCandidate(
-        player_id=_to_int(player.get("id", 0), 0),
-        player_name=str(player.get("fullName", "Unknown")),
-        lineup_slot_id=lineup_slot_id,
-        lineup_role=_lineup_role(lineup_slot_id),
-        impact=round(impact, 3),
-        reasons=reasons,
-    )
-
-
-def _compute_bad_candidate(
-    entry: dict[str, Any], scoring_period_id: int | None = None, lineup_slot_id: int = 999
-) -> PlayerCandidate | None:
-    player = (entry.get("playerPoolEntry") or {}).get("player") or {}
-    stat_map = _player_stat_map(player, scoring_period_id=scoring_period_id)
-
-    injury = str(player.get("injuryStatus", "")).upper()
-    reasons: list[str] = []
-    impact = 0.0
-
-    to = stat_map.get(STAT_ID_MAP["TO"], 0.0)
-    if to >= 5:
-        reasons.append("TO>=5")
-        impact += max(0.0, to - 4) * 1.0
-
-    fg_pct = _fg_pct(stat_map)
-    fga = stat_map.get(FGA_STAT_ID, 0.0)
-    if fga >= 10 and fg_pct <= 0.40:
-        reasons.append("FG%<=.40 on FGA>=10")
-        impact += (0.40 - fg_pct) * 25 + (fga - 9) * 0.15
-
-    ft_pct = _ft_pct(stat_map)
-    fta = stat_map.get(FTA_STAT_ID, 0.0)
-    if fta >= 6 and ft_pct <= 0.70:
-        reasons.append("FT%<=.70 on FTA>=6")
-        impact += (0.70 - ft_pct) * 20 + (fta - 5) * 0.15
-
-    if injury == "OUT":
-        reasons.append("OUT")
-        impact += 3.0
-
-    if not reasons:
-        return None
-
-    return PlayerCandidate(
-        player_id=_to_int(player.get("id", 0), 0),
-        player_name=str(player.get("fullName", "Unknown")),
-        lineup_slot_id=lineup_slot_id,
-        lineup_role=_lineup_role(lineup_slot_id),
-        impact=round(impact, 3),
-        reasons=reasons,
-    )
-
-
-def _candidate_lists(team: dict[str, Any], scoring_period_id: int | None = None) -> tuple[list[PlayerCandidate], list[PlayerCandidate]]:
-    good: list[tuple[int, int, PlayerCandidate]] = []
-    bad: list[tuple[int, int, PlayerCandidate]] = []
-
-    for entry in _roster_entries(team):
-        slot = _to_int(entry.get("lineupSlotId", 999), 999)
-        player = ((entry.get("playerPoolEntry") or {}).get("player") or {})
-        player_id = _to_int(player.get("id", 0), 0)
-
-        good_c = _compute_good_candidate(entry, scoring_period_id, lineup_slot_id=slot)
-        if good_c:
-            good.append((slot, player_id, good_c))
-
-        bad_c = _compute_bad_candidate(entry, scoring_period_id, lineup_slot_id=slot)
-        if bad_c:
-            bad.append((slot, player_id, bad_c))
-
-    good.sort(key=lambda row: (-row[2].impact, row[0], row[1]))
-    bad.sort(key=lambda row: (-row[2].impact, row[0], row[1]))
-    return [x[2] for x in good], [x[2] for x in bad]
 
 
 def _team_has_stats_for_period(team: dict[str, Any], scoring_period_id: int) -> bool:
@@ -189,6 +73,152 @@ def _team_has_stats_for_period(team: dict[str, Any], scoring_period_id: int) -> 
         if _has_stats_for_period(player, scoring_period_id):
             return True
     return False
+
+
+def _season_averages(player: dict[str, Any], season_id: int) -> SeasonAverages | None:
+    stat_map = _season_averages_stat_map(player, season_id)
+    if not stat_map:
+        return None
+    fga = stat_map.get(FGA_STAT_ID, 0.0)
+    fgm = stat_map.get(FGM_STAT_ID, 0.0)
+    fta = stat_map.get(FTA_STAT_ID, 0.0)
+    ftm = stat_map.get(FTM_STAT_ID, 0.0)
+    fg_pct = (fgm / fga) if fga > 0 else None
+    ft_pct = (ftm / fta) if fta > 0 else None
+
+    return SeasonAverages(
+        pts=round(stat_map.get(STAT_ID_MAP["PTS"], 0.0), 4),
+        threes=round(stat_map.get(STAT_ID_MAP["3PM"], 0.0), 4),
+        reb=round(stat_map.get(STAT_ID_MAP["REB"], 0.0), 4),
+        ast=round(stat_map.get(STAT_ID_MAP["AST"], 0.0), 4),
+        stl=round(stat_map.get(STAT_ID_MAP["STL"], 0.0), 4),
+        blk=round(stat_map.get(STAT_ID_MAP["BLK"], 0.0), 4),
+        to=round(stat_map.get(STAT_ID_MAP["TO"], 0.0), 4),
+        fg_pct=round(fg_pct, 4) if fg_pct is not None else None,
+        ft_pct=round(ft_pct, 4) if ft_pct is not None else None,
+    )
+
+
+def _period_stats(stat_map: dict[int, float]) -> PeriodStats | None:
+    if not stat_map:
+        return None
+    fga = stat_map.get(FGA_STAT_ID, 0.0)
+    fgm = stat_map.get(FGM_STAT_ID, 0.0)
+    fta = stat_map.get(FTA_STAT_ID, 0.0)
+    ftm = stat_map.get(FTM_STAT_ID, 0.0)
+    if fga > 0:
+        fg_pct = fgm / fga
+    else:
+        fg_pct = _to_float(stat_map.get(STAT_ID_MAP["FG%"])) if STAT_ID_MAP["FG%"] in stat_map else None
+    if fta > 0:
+        ft_pct = ftm / fta
+    else:
+        ft_pct = _to_float(stat_map.get(STAT_ID_MAP["FT%"])) if STAT_ID_MAP["FT%"] in stat_map else None
+
+    return PeriodStats(
+        pts=round(stat_map.get(STAT_ID_MAP["PTS"], 0.0), 4),
+        threes=round(stat_map.get(STAT_ID_MAP["3PM"], 0.0), 4),
+        reb=round(stat_map.get(STAT_ID_MAP["REB"], 0.0), 4),
+        ast=round(stat_map.get(STAT_ID_MAP["AST"], 0.0), 4),
+        stl=round(stat_map.get(STAT_ID_MAP["STL"], 0.0), 4),
+        blk=round(stat_map.get(STAT_ID_MAP["BLK"], 0.0), 4),
+        to=round(stat_map.get(STAT_ID_MAP["TO"], 0.0), 4),
+        fg_pct=round(fg_pct, 4) if fg_pct is not None else None,
+        ft_pct=round(ft_pct, 4) if ft_pct is not None else None,
+    )
+
+
+def _entry_games(entry: dict[str, Any], games_by_pro_team: dict[int, int] | None) -> int | None:
+    if not games_by_pro_team:
+        return None
+    player = (entry.get("playerPoolEntry") or {}).get("player") or {}
+    pro_team_id = player.get("proTeamId")
+    if pro_team_id is None:
+        return 0
+    return games_by_pro_team.get(_to_int(pro_team_id, -1), 0)
+
+
+def _preview_roster_entries(
+    team: dict[str, Any],
+    season_id: int,
+    *,
+    games_total_by_pro_team: dict[int, int] | None = None,
+) -> list[PreviewRosterEntry]:
+    entries: list[PreviewRosterEntry] = []
+    for entry in _roster_entries(team):
+        player = (entry.get("playerPoolEntry") or {}).get("player") or {}
+        status, raw = _normalize_injury_status(player.get("injuryStatus"))
+        entries.append(
+            PreviewRosterEntry(
+                player_id=_to_int(player.get("id", 0), 0),
+                player_name=str(player.get("fullName", "Unknown")),
+                lineup_slot_id=_to_int(entry.get("lineupSlotId", 999), 999),
+                lineup_role=_lineup_role(_to_int(entry.get("lineupSlotId", 999), 999)),
+                status=status,
+                status_raw=raw,
+                season_avg=_season_averages(player, season_id),
+                games_total=_entry_games(entry, games_total_by_pro_team),
+            )
+        )
+
+    entries.sort(key=lambda e: (e.lineup_slot_id, e.player_id, e.player_name))
+    return entries
+
+
+def _outlook_roster_entries(
+    team: dict[str, Any],
+    season_id: int,
+    *,
+    games_played_by_pro_team: dict[int, int] | None = None,
+    games_remaining_by_pro_team: dict[int, int] | None = None,
+) -> list[OutlookRosterEntry]:
+    entries: list[OutlookRosterEntry] = []
+    for entry in _roster_entries(team):
+        player = (entry.get("playerPoolEntry") or {}).get("player") or {}
+        status, raw = _normalize_injury_status(player.get("injuryStatus"))
+        entries.append(
+            OutlookRosterEntry(
+                player_id=_to_int(player.get("id", 0), 0),
+                player_name=str(player.get("fullName", "Unknown")),
+                lineup_slot_id=_to_int(entry.get("lineupSlotId", 999), 999),
+                lineup_role=_lineup_role(_to_int(entry.get("lineupSlotId", 999), 999)),
+                status=status,
+                status_raw=raw,
+                season_avg=_season_averages(player, season_id),
+                games_played=_entry_games(entry, games_played_by_pro_team),
+                games_remaining=_entry_games(entry, games_remaining_by_pro_team),
+            )
+        )
+
+    entries.sort(key=lambda e: (e.lineup_slot_id, e.player_id, e.player_name))
+    return entries
+
+
+def _roster_entries_with_period_stats(
+    team: dict[str, Any], season_id: int, scoring_period_id: int
+) -> list[RecapRosterEntry]:
+    entries: list[RecapRosterEntry] = []
+    for entry in _roster_entries(team):
+        player = (entry.get("playerPoolEntry") or {}).get("player") or {}
+        stat_map = _player_stat_map(player, scoring_period_id=scoring_period_id)
+        if not stat_map:
+            continue
+        status, raw = _normalize_injury_status(player.get("injuryStatus"))
+        entries.append(
+            RecapRosterEntry(
+                player_id=_to_int(player.get("id", 0), 0),
+                player_name=str(player.get("fullName", "Unknown")),
+                lineup_slot_id=_to_int(entry.get("lineupSlotId", 999), 999),
+                lineup_role=_lineup_role(_to_int(entry.get("lineupSlotId", 999), 999)),
+                status=status,
+                status_raw=raw,
+                season_avg=_season_averages(player, season_id),
+                period_stats=_period_stats(stat_map),
+            )
+        )
+
+    entries.sort(key=lambda e: (e.lineup_slot_id, e.player_id, e.player_name))
+    return entries
 
 
 def compute_movers(categories: list[CategoryStat], yesterday_snapshot: dict[str, dict[str, float]] | None) -> list[Mover]:
@@ -261,21 +291,19 @@ def build_recap(
     has_your_data = _team_has_stats_for_period(you_team, previous_scoring_period_id)
     has_opp_data = _team_has_stats_for_period(opp_team, previous_scoring_period_id)
     has_data = has_your_data or has_opp_data
+    season_id = _infer_season_id(league_payload, you_team)
 
     if has_data:
-        you_good, you_bad = _candidate_lists(you_team, previous_scoring_period_id)
-        opp_good, opp_bad = _candidate_lists(opp_team, previous_scoring_period_id)
-        candidate_meta = CandidateMeta(
+        rosters_meta = RosterMeta(
             source_scoring_period_id=previous_scoring_period_id,
             has_data=True,
             note=None,
         )
     else:
-        you_good, you_bad, opp_good, opp_bad = [], [], [], []
-        candidate_meta = CandidateMeta(
+        rosters_meta = RosterMeta(
             source_scoring_period_id=previous_scoring_period_id,
             has_data=False,
-            note="No completed games in previous scoring day; notable performances unavailable.",
+            note="No completed games in previous scoring day; performance data unavailable.",
         )
 
     return RecapResponse(
@@ -289,13 +317,15 @@ def build_recap(
         matchup_score=_matchup_score(categories),
         categories=categories,
         movers=compute_movers(categories, yesterday_snapshot),
-        candidates=CandidateGroup(
-            you_good=you_good[:4],
-            you_bad=you_bad[:3],
-            opp_good=opp_good[:3],
-            opp_bad=opp_bad[:2],
+        rosters=RecapRosterGroup(
+            you=_roster_entries_with_period_stats(you_team, season_id, previous_scoring_period_id)
+            if has_your_data
+            else [],
+            opp=_roster_entries_with_period_stats(opp_team, season_id, previous_scoring_period_id)
+            if has_opp_data
+            else [],
         ),
-        candidates_meta=candidate_meta,
+        rosters_meta=rosters_meta,
         active_players={
             "you": _active_count(you_team),
             "opp": _active_count(opp_team),
@@ -366,6 +396,18 @@ def build_preview(
         opp_standing=_team_standing(opp_team),
         matchup_period_id=matchup_period_id,
         projected_matchup_score=_matchup_score_with_ties(categories),
+        rosters=PreviewRosterGroup(
+            you=_preview_roster_entries(
+                you_team,
+                season_id,
+                games_total_by_pro_team=games_map,
+            ),
+            opp=_preview_roster_entries(
+                opp_team,
+                season_id,
+                games_total_by_pro_team=games_map,
+            ),
+        ),
         categories=_category_projection_map(categories),
         games=GamesBreakdown(
             you_total_games=you_games,
@@ -414,9 +456,13 @@ def build_outlook(
         current_scoring_period = current_scoring_period[0] if current_scoring_period else None
     current_scoring_period_id = _to_int(current_scoring_period, 0)
     remaining_scoring_period_ids = [pid for pid in scoring_period_ids if pid > current_scoring_period_id]
+    played_scoring_period_ids = [pid for pid in scoring_period_ids if pid <= current_scoring_period_id]
 
     remaining_games_map = _games_by_pro_team(
         schedule_payload, matchup_period_id, scoring_period_ids=remaining_scoring_period_ids
+    )
+    played_games_map = _games_by_pro_team(
+        schedule_payload, matchup_period_id, scoring_period_ids=played_scoring_period_ids
     )
     you_remaining_games = _team_projected_games(
         you_team, remaining_games_map, starter_slot_counts=starter_slot_counts
@@ -465,6 +511,20 @@ def build_outlook(
         matchup_period_id=matchup_period_id,
         current_matchup_score=_matchup_score_with_ties(current_categories),
         projected_matchup_score=_matchup_score_with_ties(projected_categories),
+        rosters=OutlookRosterGroup(
+            you=_outlook_roster_entries(
+                you_team,
+                season_id,
+                games_played_by_pro_team=played_games_map,
+                games_remaining_by_pro_team=remaining_games_map,
+            ),
+            opp=_outlook_roster_entries(
+                opp_team,
+                season_id,
+                games_played_by_pro_team=played_games_map,
+                games_remaining_by_pro_team=remaining_games_map,
+            ),
+        ),
         categories=_category_outlook_map(current_categories, projected_categories),
         games_remaining=GamesRemainingBreakdown(
             you_remaining_games=you_remaining_games,

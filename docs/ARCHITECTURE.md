@@ -24,7 +24,7 @@
   - Snapshot key helpers
 - `espn_fbb/analytics.py`
   - Orchestrates recap/preview/outlook assembly
-  - Contains recap-specific candidate and mover logic
+  - Contains recap-specific roster/performance and mover logic
 - `espn_fbb/analytics_base.py`
   - Core category/stat constants and low-level stat extraction helpers
   - Category status/signal math and category-map shaping helpers

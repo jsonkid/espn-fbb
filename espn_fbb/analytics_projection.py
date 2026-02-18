@@ -100,6 +100,14 @@ def _season_totals_stat_map(player: dict[str, Any], season_id: int) -> dict[int,
     return {}
 
 
+def _season_averages_stat_map(player: dict[str, Any], season_id: int) -> dict[int, float]:
+    stat_map = _season_totals_stat_map(player, season_id)
+    gp = stat_map.get(42, 0.0)
+    if gp <= 0:
+        return {}
+    return {stat_id: value / gp for stat_id, value in stat_map.items()}
+
+
 def _projected_category_totals_from_starters(
     team: dict[str, Any],
     season_id: int,

@@ -12,8 +12,8 @@ Top-level fields:
 - `matchup_score` (`you`, `opp`)
 - `categories` (array of 9 category rows)
 - `movers` (up to 5)
-- `candidates` (`you_good`, `you_bad`, `opp_good`, `opp_bad`)
-- `candidates_meta` (`source_scoring_period_id`, `has_data`, `note`)
+- `rosters` (`you`, `opp`)
+- `rosters_meta` (`source_scoring_period_id`, `has_data`, `note`)
 - `active_players` (`you`, `opp`)
 
 Category row (`categories[]`):
@@ -28,6 +28,7 @@ Top-level fields:
 - `generated_at`, `league_id`, `team_id`, `you_team_name`, `opp_team_id`, `opp_team_name`, `matchup_period_id`
 - `you_standing`, `opp_standing`
 - `projected_matchup_score` (`you`, `opp`, `tie`)
+- `rosters` (`you`, `opp`)
 - `categories` (map keyed by category code)
 - `games` (`you_total_games`, `opp_total_games`, `games_diff`)
 - `lineup_actions` (structured actions)
@@ -60,6 +61,7 @@ Top-level fields:
 - `you_standing`, `opp_standing`
 - `current_matchup_score` (`you`, `opp`, `tie`)
 - `projected_matchup_score` (`you`, `opp`, `tie`)
+- `rosters` (`you`, `opp`)
 - `categories` (map keyed by category code with paired `current_*` and `projected_*`)
 - `games_remaining` (`you_remaining_games`, `opp_remaining_games`, `games_remaining_diff`)
 - `summary_hints`
@@ -93,7 +95,64 @@ Category entry (`categories.{CAT}`):
 - `season_id`
 - `scoring_period_ids`
 - `your_starters_missing_season_stats`
-- `opp_starters_missing_season_stats`
+  - `opp_starters_missing_season_stats`
+
+`rosters`:
+
+- `you`: list of roster entries (shape depends on command)
+- `opp`: list of roster entries (shape depends on command)
+
+Roster entry shapes:
+
+- `recap` uses `RecapRosterEntry` (includes `period_stats`)
+- `matchup_preview` uses `PreviewRosterEntry` (includes `games_total`)
+- `matchup_outlook` uses `OutlookRosterEntry` (includes `games_played`/`games_remaining`)
+
+`RecapRosterEntry`:
+
+- `player_id`
+- `player_name`
+- `lineup_slot_id`
+- `lineup_role` (`starter|bench`)
+- `status` (normalized: `active|out|day_to_day|suspended|questionable|doubtful|probable|injured_reserve|illness|unknown`)
+- `status_raw` (raw ESPN injury status string, if present)
+- `season_avg` (`SeasonAverages` or `null`)
+- `period_stats` (`PeriodStats` or `null`)
+
+`PreviewRosterEntry`:
+
+- `player_id`
+- `player_name`
+- `lineup_slot_id`
+- `lineup_role` (`starter|bench`)
+- `status` (normalized: `active|out|day_to_day|suspended|questionable|doubtful|probable|injured_reserve|illness|unknown`)
+- `status_raw` (raw ESPN injury status string, if present)
+- `season_avg` (`SeasonAverages` or `null`)
+- `games_total` (integer or `null`)
+
+`OutlookRosterEntry`:
+
+- `player_id`
+- `player_name`
+- `lineup_slot_id`
+- `lineup_role` (`starter|bench`)
+- `status` (normalized: `active|out|day_to_day|suspended|questionable|doubtful|probable|injured_reserve|illness|unknown`)
+- `status_raw` (raw ESPN injury status string, if present)
+- `season_avg` (`SeasonAverages` or `null`)
+- `games_played` (integer or `null`)
+- `games_remaining` (integer or `null`)
+
+`SeasonAverages`:
+
+- `pts`, `threes`, `reb`, `ast`, `stl`, `blk`, `to`, `fg_pct`, `ft_pct`
+
+`PeriodStats`:
+
+- `pts`, `threes`, `reb`, `ast`, `stl`, `blk`, `to`, `fg_pct`, `ft_pct`
+
+Recap roster note:
+
+- `rosters` only includes players who recorded stats in the previous scoring period.
 
 ## Stability Notes
 
@@ -122,6 +181,21 @@ Source: sanitized real output (`preview.json`).
     "you": 5,
     "opp": 4,
     "tie": 0
+  },
+  "rosters": {
+    "you": [
+      {
+        "player_id": 101,
+        "player_name": "Example Player",
+        "lineup_slot_id": 0,
+        "lineup_role": "starter",
+        "status": "active",
+        "status_raw": "ACTIVE",
+        "season_avg": { "pts": 18.2, "threes": 2.4, "reb": 5.1, "ast": 4.3, "stl": 1.1, "blk": 0.6, "to": 2.1, "fg_pct": 0.472, "ft_pct": 0.814 },
+        "games_total": 4
+      }
+    ],
+    "opp": []
   },
   "categories": {
     "FG%": {
@@ -270,6 +344,22 @@ Source: sanitized real output (`outlook.json`).
     "you": 6,
     "opp": 3,
     "tie": 0
+  },
+  "rosters": {
+    "you": [
+      {
+        "player_id": 101,
+        "player_name": "Example Player",
+        "lineup_slot_id": 0,
+        "lineup_role": "starter",
+        "status": "active",
+        "status_raw": "ACTIVE",
+        "season_avg": { "pts": 18.2, "threes": 2.4, "reb": 5.1, "ast": 4.3, "stl": 1.1, "blk": 0.6, "to": 2.1, "fg_pct": 0.472, "ft_pct": 0.814 },
+        "games_played": 2,
+        "games_remaining": 2
+      }
+    ],
+    "opp": []
   },
   "categories": {
     "FG%": {
@@ -476,16 +566,14 @@ Source: sanitized real output (`recap.json`).
     { "key": "PTS", "you": 264.0, "opp": 270.0, "margin": -6.0, "status": "opp" }
   ],
   "movers": [],
-  "candidates": {
-    "you_good": [],
-    "you_bad": [],
-    "opp_good": [],
-    "opp_bad": []
+  "rosters": {
+    "you": [],
+    "opp": []
   },
-  "candidates_meta": {
+  "rosters_meta": {
     "source_scoring_period_id": 121,
     "has_data": false,
-    "note": "No completed games in previous scoring day; notable performances unavailable."
+    "note": "No completed games in previous scoring day; performance data unavailable."
   },
   "active_players": {
     "you": 10,

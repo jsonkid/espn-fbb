@@ -1,5 +1,10 @@
 # Changelog
 
+## February 18, 2026
+
+- Replaced recap `candidates` with `rosters`, including previous scoring period stats and season averages (players without stats are excluded).
+- Added `rosters` to matchup preview and outlook outputs with normalized availability status and season averages.
+
 ## February 17, 2026
 
 - Migrated from `pip` to `uv`
@@ -19,4 +24,3 @@
   - `data_quality`
 - Removed old preview week selector path from user command surface.
 - Reorganized documentation into audience-specific files.
-

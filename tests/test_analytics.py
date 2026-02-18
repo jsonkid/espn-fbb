@@ -179,8 +179,8 @@ def test_build_recap_and_movers_with_ties_allowed():
 
     assert recap2.matchup_score["you"] > recap2.matchup_score["opp"]
     assert any(m.key == "3PM" for m in recap2.movers)
-    assert recap2.candidates.you_good
-    assert recap2.candidates.you_bad
+    assert recap2.rosters.you
+    assert recap2.rosters_meta.has_data is True
 
 
 def test_build_preview_signals_and_outlook():
@@ -204,6 +204,9 @@ def test_build_preview_signals_and_outlook():
     assert preview.outlook["label"] in {"Lean You", "Strong Lean You"}
     assert preview.data_quality.projection_basis
     assert preview.summary_hints.closest_categories
+    assert preview.rosters.you
+    assert any(player.status == "out" for player in preview.rosters.you)
+    assert all(isinstance(player.games_total, int) for player in preview.rosters.you)
 
 
 def test_preview_next_has_no_lineup_actions():
@@ -239,6 +242,10 @@ def test_build_outlook_includes_current_and_projected_sections():
     assert isinstance(outlook.games_remaining.games_remaining_diff, int)
     assert isinstance(outlook.summary_hints.swing_categories, list)
     assert outlook.data_quality.projection_basis
+    assert outlook.rosters.you
+    assert any(player.status == "out" for player in outlook.rosters.you)
+    assert all(isinstance(player.games_remaining, int) for player in outlook.rosters.you)
+    assert all(isinstance(player.games_played, int) for player in outlook.rosters.you)
 
 
 def test_build_outlook_handles_missing_matchup_row():
@@ -341,13 +348,12 @@ def test_build_preview_handles_list_game_values():
     assert isinstance(preview.games.games_diff, int)
 
 
-def test_recap_candidates_use_previous_scoring_day():
+def test_recap_rosters_use_previous_scoring_day():
     league = _league_payload()
     league["status"]["currentScoringPeriod"] = 80
 
     # Player has huge current-day line (80) but only modest previous-day line (79).
-    # Recap notable performances should use previous day (79), so this player should
-    # not appear as a good candidate.
+    # Recap rosters should use previous day (79).
     your_entries = league["teams"][0]["roster"]["entries"]
     your_entries[0]["playerPoolEntry"]["player"]["stats"] = [
         {
@@ -363,11 +369,13 @@ def test_recap_candidates_use_previous_scoring_day():
     ]
 
     recap = build_recap(league, team_id=4, league_id="123")
-    names = {p.player_name for p in recap.candidates.you_good}
-    assert "Alpha One" not in names
+    alpha = next((p for p in recap.rosters.you if p.player_name == "Alpha One"), None)
+    assert alpha is not None
+    assert alpha.period_stats
+    assert alpha.period_stats.pts == 12
 
 
-def test_recap_candidates_do_not_fallback_to_aggregate_when_previous_missing():
+def test_recap_rosters_do_not_fallback_to_aggregate_when_previous_missing():
     league = _league_payload()
     league["status"]["currentScoringPeriod"] = 80
     your_entries = league["teams"][0]["roster"]["entries"]
@@ -381,18 +389,18 @@ def test_recap_candidates_do_not_fallback_to_aggregate_when_previous_missing():
     ]
 
     recap = build_recap(league, team_id=4, league_id="123")
-    names = {p.player_name for p in recap.candidates.you_good}
-    assert "Alpha One" not in names
+    assert recap.rosters.you == []
+    assert recap.rosters_meta.has_data is False
 
 
-def test_recap_candidates_include_lineup_role_metadata():
+def test_recap_rosters_include_lineup_role_metadata():
     league = _league_payload()
     league["status"]["currentScoringPeriod"] = 81  # previous day is 80 in fixture rows
     recap = build_recap(league, team_id=4, league_id="123")
-    assert recap.candidates.you_good
-    assert recap.candidates.you_bad
-    assert recap.candidates.you_good[0].lineup_role in {"starter", "bench"}
-    assert isinstance(recap.candidates.you_good[0].lineup_slot_id, int)
+    assert recap.rosters.you
+    assert recap.rosters.you[0].lineup_role in {"starter", "bench"}
+    assert isinstance(recap.rosters.you[0].lineup_slot_id, int)
+    assert recap.rosters.you[0].period_stats
 
 
 def test_recap_no_previous_day_games_is_graceful():
@@ -412,13 +420,11 @@ def test_recap_no_previous_day_games_is_graceful():
             ]
 
     recap = build_recap(league, team_id=4, league_id="123")
-    assert recap.candidates.you_good == []
-    assert recap.candidates.you_bad == []
-    assert recap.candidates.opp_good == []
-    assert recap.candidates.opp_bad == []
-    assert recap.candidates_meta.has_data is False
-    assert recap.candidates_meta.source_scoring_period_id == 80
-    assert recap.candidates_meta.note is not None
+    assert recap.rosters.you == []
+    assert recap.rosters.opp == []
+    assert recap.rosters_meta.has_data is False
+    assert recap.rosters_meta.source_scoring_period_id == 80
+    assert recap.rosters_meta.note is not None
 
 
 def test_preview_games_sum_scoring_periods_for_matchup():

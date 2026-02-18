@@ -87,6 +87,8 @@ def test_recap_outputs_json(monkeypatch, tmp_path: Path):
     assert payload["you_team_name"]
     assert payload["opp_team_name"]
     assert "categories" in payload
+    assert "rosters" in payload
+    assert "rosters_meta" in payload
 
 
 def test_matchup_preview_outputs_json(monkeypatch, tmp_path: Path):
@@ -113,6 +115,8 @@ def test_matchup_preview_outputs_json(monkeypatch, tmp_path: Path):
     assert payload["you_team_name"]
     assert payload["you_standing"]["wins"] == 12
     assert payload["opp_standing"]["wins"] == 7
+    assert payload["rosters"]["you"] == []
+    assert payload["rosters"]["opp"] == []
     assert "outlook" in payload
 
 
@@ -140,4 +144,6 @@ def test_matchup_outlook_outputs_json(monkeypatch, tmp_path: Path):
     assert payload["you_team_name"]
     assert payload["you_standing"]["rank"] == 2
     assert payload["opp_standing"]["rank"] == 6
+    assert payload["rosters"]["you"] == []
+    assert payload["rosters"]["opp"] == []
     assert "games_remaining" in payload

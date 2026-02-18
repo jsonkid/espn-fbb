@@ -28,7 +28,7 @@ Global overrides:
 
 Purpose:
 
-- Summarize current matchup state and previous-day notable performances.
+- Summarize current matchup state and previous-day performance data for players who logged stats.
 
 Examples:
 

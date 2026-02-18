@@ -15,7 +15,7 @@ uv run pytest -q
   - request budget enforcement
   - caching behavior
 - `tests/test_analytics.py`
-  - recap movers/candidates
+  - recap movers/rosters
   - previous-day handling
   - matchup preview/outlook projections
   - payload shape variants for schedule/matchup mappings

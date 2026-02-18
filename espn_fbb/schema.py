@@ -24,42 +24,10 @@ class Mover(BaseModel):
     yesterday_margin: float
 
 
-class PlayerCandidate(BaseModel):
-    player_id: int
-    player_name: str
-    lineup_slot_id: int
-    lineup_role: str
-    impact: float
-    reasons: list[str] = Field(default_factory=list)
-
-
-class CandidateGroup(BaseModel):
-    you_good: list[PlayerCandidate] = Field(default_factory=list)
-    you_bad: list[PlayerCandidate] = Field(default_factory=list)
-    opp_good: list[PlayerCandidate] = Field(default_factory=list)
-    opp_bad: list[PlayerCandidate] = Field(default_factory=list)
-
-
-class CandidateMeta(BaseModel):
+class RosterMeta(BaseModel):
     source_scoring_period_id: int
     has_data: bool
     note: str | None = None
-
-
-class RecapResponse(BaseModel):
-    generated_at: str
-    league_id: str
-    team_id: int
-    you_team_name: str | None = None
-    opp_team_id: int | None = None
-    opp_team_name: str | None = None
-    matchup_period_id: int
-    matchup_score: dict[str, int]
-    categories: list[CategoryStat]
-    movers: list[Mover]
-    candidates: CandidateGroup
-    candidates_meta: CandidateMeta
-    active_players: dict[str, int]
 
 
 class GamesBreakdown(BaseModel):
@@ -116,6 +84,95 @@ class SummaryHints(BaseModel):
     swing_categories: list[str] = Field(default_factory=list)
 
 
+class SeasonAverages(BaseModel):
+    pts: float | None = None
+    threes: float | None = None
+    reb: float | None = None
+    ast: float | None = None
+    stl: float | None = None
+    blk: float | None = None
+    to: float | None = None
+    fg_pct: float | None = None
+    ft_pct: float | None = None
+
+
+class PeriodStats(BaseModel):
+    pts: float | None = None
+    threes: float | None = None
+    reb: float | None = None
+    ast: float | None = None
+    stl: float | None = None
+    blk: float | None = None
+    to: float | None = None
+    fg_pct: float | None = None
+    ft_pct: float | None = None
+
+
+class RecapRosterEntry(BaseModel):
+    player_id: int
+    player_name: str
+    lineup_slot_id: int
+    lineup_role: str
+    status: str
+    status_raw: str | None = None
+    season_avg: SeasonAverages | None = None
+    period_stats: PeriodStats | None = None
+
+
+class PreviewRosterEntry(BaseModel):
+    player_id: int
+    player_name: str
+    lineup_slot_id: int
+    lineup_role: str
+    status: str
+    status_raw: str | None = None
+    season_avg: SeasonAverages | None = None
+    games_total: int | None = None
+
+
+class OutlookRosterEntry(BaseModel):
+    player_id: int
+    player_name: str
+    lineup_slot_id: int
+    lineup_role: str
+    status: str
+    status_raw: str | None = None
+    season_avg: SeasonAverages | None = None
+    games_played: int | None = None
+    games_remaining: int | None = None
+
+
+class RecapRosterGroup(BaseModel):
+    you: list[RecapRosterEntry] = Field(default_factory=list)
+    opp: list[RecapRosterEntry] = Field(default_factory=list)
+
+
+class PreviewRosterGroup(BaseModel):
+    you: list[PreviewRosterEntry] = Field(default_factory=list)
+    opp: list[PreviewRosterEntry] = Field(default_factory=list)
+
+
+class OutlookRosterGroup(BaseModel):
+    you: list[OutlookRosterEntry] = Field(default_factory=list)
+    opp: list[OutlookRosterEntry] = Field(default_factory=list)
+
+
+class RecapResponse(BaseModel):
+    generated_at: str
+    league_id: str
+    team_id: int
+    you_team_name: str | None = None
+    opp_team_id: int | None = None
+    opp_team_name: str | None = None
+    matchup_period_id: int
+    matchup_score: dict[str, int]
+    categories: list[CategoryStat]
+    movers: list[Mover]
+    rosters: RecapRosterGroup
+    rosters_meta: RosterMeta
+    active_players: dict[str, int]
+
+
 class DataQuality(BaseModel):
     projection_basis: str
     projection_used: bool
@@ -146,6 +203,7 @@ class PreviewResponse(BaseModel):
     opp_standing: TeamStanding | None = None
     matchup_period_id: int
     projected_matchup_score: dict[str, int]
+    rosters: PreviewRosterGroup
     categories: dict[str, CategoryProjection]
     games: GamesBreakdown
     lineup_actions: list[LineupAction]
@@ -168,6 +226,7 @@ class OutlookResponse(BaseModel):
     matchup_period_id: int
     current_matchup_score: dict[str, int]
     projected_matchup_score: dict[str, int]
+    rosters: OutlookRosterGroup
     categories: dict[str, CategoryOutlook]
     games_remaining: GamesRemainingBreakdown
     summary_hints: SummaryHints

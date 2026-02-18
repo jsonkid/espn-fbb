@@ -20,7 +20,7 @@ Status logic:
 - Computes per-category margin and status.
 - Computes movers versus yesterday snapshot with category thresholds.
 - Notable performances use previous completed scoring period only.
-- If no previous-day stats exist, candidate lists are empty and explained via metadata.
+- If no previous-day stats exist, recap rosters are empty and explained via metadata.
 
 ## Matchup Preview
 
@@ -64,4 +64,3 @@ Each matchup response includes:
 - selected season id
 - relevant scoring period ids
 - missing season-stat counts among projected starters (you/opp)
-
